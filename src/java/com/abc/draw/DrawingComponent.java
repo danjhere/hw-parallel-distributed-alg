@@ -5,6 +5,7 @@ import java.awt.*;
 import javax.swing.*;
 
 public class DrawingComponent extends JComponent {
+
 	private Drawing drawing;
 
 	public DrawingComponent(Drawing drawing) {

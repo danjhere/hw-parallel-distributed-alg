@@ -16,7 +16,6 @@ public class DrawDemo {
         Line line = new Line(p1, p2);
         drawing.append(line);
 
-        /* Comment out until the class Triangle has been written
         Triangle t1 = new Triangle(
             new Point(10.0, 20.0),
             new Point(10.0, 300.0), 
@@ -28,19 +27,14 @@ public class DrawDemo {
             new Point(380.0, 170.0), 
             new Point(150.0, 300.0));
         drawing.append(t2);
-        */
 
-        /* Comment out until the class Square has been written
         Square s = new Square(new Point(200.0, 200.0), 300.0);
         s.setWidth(200.0); // just to see that this method works
         drawing.append(s);
-        */
 
-        /* Comment out until the class Rectangle has been written
         Rectangle rect1 = new Rectangle(new Point(400.0, 50.0), 300.0, 1.0);
         rect1.setHeight(130.0); // just to see that this method works
         drawing.append(rect1);
-        */
 
         return drawing;
     }

@@ -1,7 +1,8 @@
 # IntelliJ files
 #################
 .idea
-core.iml
+*.iml
+out/*
 
 
 # OS Files
