@@ -9,8 +9,6 @@
 5. Use System.currentTimeMillis() to find out the currnet time in ms. Calculate
    the actual elapsed time and compare it to the expected elapsed time and
    adjust the next sleep time accordingly.
-6. After reaching 0, print the actual total elapsed time using 
+6. After reaching 0, print the actual total elapsed time using
    System.out.println(). It should be between 9960 ms and 10040 ms. If you get
    something more like 10500 ms, that is too far off.
-      
-       
