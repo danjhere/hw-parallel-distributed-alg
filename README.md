@@ -1,4 +1,5 @@
-Countdown Timer
+# Countdown Timer
+
 1. This app counts down from 10 seconds to zero, one second at a time.
 2. Only make changes to CountdownWorker.java
 3. On MinuteSecondDisplay, use this method to display the number of seconds left:
