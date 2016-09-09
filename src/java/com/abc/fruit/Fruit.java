@@ -28,7 +28,7 @@ public class Fruit {
             }
         }, name);
 
-        internalThread.run();
+        internalThread.start();
     }
 
     private void doWork() {
