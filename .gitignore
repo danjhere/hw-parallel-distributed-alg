@@ -1,0 +1,21 @@
+# IntelliJ files
+#################
+.idea
+*.iml
+out/*
+
+# Eclipse files
+#################
+.project
+.classpath
+
+
+# OS Files
+##############
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
