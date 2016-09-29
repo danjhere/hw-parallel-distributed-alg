@@ -139,7 +139,7 @@ public class CircularArrayLongFifo implements LongFifo {
     @Override
     public boolean waitUntilEmpty(long msTimeout) throws InterruptedException {
         synchronized ( lockObject ) {
-            while (!isEmpty()) {
+            if (!isEmpty()) {
                 lockObject.wait(msTimeout);
             }
             return this.isEmpty();
