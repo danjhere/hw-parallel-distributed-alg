@@ -1,6 +1,8 @@
 package com.abc.sync;
 
 
+import java.util.Arrays;
+
 /**
  * Implementation of {@link LongFifo} which uses a circular array internally.
  * <p>
@@ -29,8 +31,7 @@ public class CircularArrayLongFifo implements LongFifo {
     public CircularArrayLongFifo(int fixedCapacity,
                                  Object proposedLockObject) {
 
-        lockObject =
-            proposedLockObject != null ? proposedLockObject : new Object();
+        lockObject = proposedLockObject != null ? proposedLockObject : new Object();
 
         slots = new long[fixedCapacity];
         head = 0;
@@ -70,12 +71,11 @@ public class CircularArrayLongFifo implements LongFifo {
     @Override
     public void clear() {
         synchronized ( lockObject ) {
-            for (int i=0; i<slots.length; i++) {
-                slots[i] = 0;
-            }
+            Arrays.fill(this.slots, 0);
             head=0;
             tail=0;
             count=0;
+            lockObject.notifyAll();
         }
     }
 
@@ -88,10 +88,14 @@ public class CircularArrayLongFifo implements LongFifo {
     @Override
     public boolean add(long value, long msTimeout) throws InterruptedException {
         boolean added = false;
+        long endTime = System.currentTimeMillis() + msTimeout;
+        long msRemaining = msTimeout;
 
         synchronized ( lockObject ) {
-            if ( !isFull() ) {
+
+            while ( !isFull() && msRemaining > 0 ) {
                 lockObject.wait(msTimeout);
+                msRemaining = endTime - System.currentTimeMillis();
             }
 
             if ( !isFull() ) {
@@ -101,24 +105,13 @@ public class CircularArrayLongFifo implements LongFifo {
                 added = true;
                 lockObject.notifyAll();
             }
-
         }
-
         return added;
     }
 
     @Override
     public void add(long value) throws InterruptedException {
-        synchronized ( lockObject ) {
-            while ( isFull() ) {
-                lockObject.wait();
-            }
-
-            slots[tail] = value;
-            tail = incrementCircular(tail);
-            count++;
-            lockObject.notifyAll();
-        }
+        this.add(value, 0);
     }
 
     @Override
@@ -138,9 +131,13 @@ public class CircularArrayLongFifo implements LongFifo {
 
     @Override
     public boolean waitUntilEmpty(long msTimeout) throws InterruptedException {
+        long startTimeMillis = System.currentTimeMillis();
+        long msElapsed = 0;
+
         synchronized ( lockObject ) {
-            if (!isEmpty()) {
+            while (!isEmpty() && msElapsed >= 0) {
                 lockObject.wait(msTimeout);
+                msElapsed = System.currentTimeMillis() - startTimeMillis;
             }
             return this.isEmpty();
         }
@@ -148,11 +145,7 @@ public class CircularArrayLongFifo implements LongFifo {
 
     @Override
     public void waitUntilEmpty() throws InterruptedException {
-        synchronized ( lockObject ) {
-            while ( !isEmpty() ) {
-                lockObject.wait();
-            }
-        }
+        this.waitUntilEmpty(0);
     }
 
     // this method is correct as written - do not change

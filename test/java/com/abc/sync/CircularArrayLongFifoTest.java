@@ -75,6 +75,40 @@ public class CircularArrayLongFifoTest {
         remove.start();
     }
 
+
+    @Test
+    public void notify_on_clear() throws InterruptedException {
+
+        long item1 = 100L;
+        long item2 = 100L;
+
+        // Fill fifo
+        CircularArrayLongFifo fifo = new CircularArrayLongFifo(1);
+        fifo.add(item1);
+
+
+        Thread full = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    fifo.add(item2);
+                    assertEquals(item2, fifo.remove());
+                } catch (Exception e) {
+                    fail("Unexpected exception caught: " + e.getMessage());
+                }
+            }
+        });
+        full.start();
+
+        Thread remove = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                fifo.clear();
+            }
+        });
+        remove.start();
+    }
+
     @Test
     public void remove_notEmpty() throws InterruptedException {
         CircularArrayLongFifo fifo = new CircularArrayLongFifo(2);
@@ -117,6 +151,91 @@ public class CircularArrayLongFifoTest {
             }
         });
         add.start();
+    }
+
+    @Test
+    public void waitUntilEmpty() throws InterruptedException {
+
+        // Full fifo
+        CircularArrayLongFifo fifo = new CircularArrayLongFifo(1);
+        fifo.add(100L);
+
+        Thread full = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    fifo.waitUntilEmpty();
+                    assertEquals(true, true);
+                } catch (Exception e) {
+                    fail("Unexpected exception caught: " + e.getMessage());
+                }
+            }
+        });
+        full.start();
+
+        Thread remove = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    fifo.remove();
+                } catch (Exception e) {
+                    fail("Unexpected exception caught: " + e.getMessage());
+                }
+            }
+        });
+        remove.start();
+    }
+
+    @Test
+    public void waitUntilEmpty_timeout1() throws InterruptedException {
+
+        // Full fifo
+        CircularArrayLongFifo fifo = new CircularArrayLongFifo(1);
+        fifo.add(100L);
+
+        Thread full = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    assertTrue(fifo.waitUntilEmpty(5000));
+                } catch (Exception e) {
+                    fail("Unexpected exception caught: " + e.getMessage());
+                }
+            }
+        });
+        full.start();
+
+        Thread remove = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    fifo.remove();
+                } catch (Exception e) {
+                    fail("Unexpected exception caught: " + e.getMessage());
+                }
+            }
+        });
+        remove.start();
+    }
+
+    @Test
+    public void waitUntilEmpty_timeout2() throws InterruptedException {
+
+        // Full fifo
+        CircularArrayLongFifo fifo = new CircularArrayLongFifo(1);
+        fifo.add(100L);
+
+        Thread full = new Thread( new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    assertFalse(fifo.waitUntilEmpty(5000));
+                } catch (Exception e) {
+                    fail("Unexpected exception caught: " + e.getMessage());
+                }
+            }
+        });
+        full.start();
     }
 
     @Test
