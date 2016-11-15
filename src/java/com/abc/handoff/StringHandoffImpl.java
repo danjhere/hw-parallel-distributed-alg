@@ -32,26 +32,44 @@ import com.programix.thread.*;
  */
 public class StringHandoffImpl implements StringHandoff {
 
-    private volatile String message;
-    private volatile boolean shutdown;
+    private String message;
+    private boolean shutdown;
+    private boolean waiting;
 
 
-    public StringHandoffImpl() {
-        this.message = null;
-        this.shutdown = false;
-    }
+    public StringHandoffImpl() {}
 
 
     private String getMessage() {
         String temp = this.message;
-        this.message = null;
-        getLockObject().notifyAll();
+        clearMessage();
         return temp;
     }
 
-    private void setMessage(String message) {
-        this.message = message;
+    private void clearMessage(){
+        this.message = null;
         getLockObject().notifyAll();
+    }
+
+    private void setMessage(String msg) {
+        if (this.message == null) {
+            this.message = msg;
+            getLockObject().notifyAll();
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
+    private void setWaiting() {
+        if (this.waiting) {
+            throw new IllegalStateException();
+        } else {
+            this.waiting = true;
+        }
+    }
+
+    private void clearWaiting(){
+        this.waiting = false;
     }
 
     private void checkForShutdown(){
@@ -65,32 +83,33 @@ public class StringHandoffImpl implements StringHandoff {
             throws InterruptedException, TimedOutException, ShutdownException, IllegalStateException {
 
         checkForShutdown();
-        if (message != null) {
-            throw new IllegalStateException();
-        } else {
-            setMessage(msg);
-        }
+        setMessage(msg);
 
-        if (msTimeout <= 0) {
-            while (message != null) {
-                checkForShutdown();
-                getLockObject().wait();
-            }
-            return;
-        }
+        try {
 
-        long endTime = System.currentTimeMillis() + msTimeout;
-        long msRemaining = msTimeout;
-
-        while (msRemaining > 0) {
-            checkForShutdown();
-            if (message == null) {
+            if (msTimeout <= 0) {
+                while (message != null) {
+                    checkForShutdown();
+                    getLockObject().wait();
+                }
                 return;
             }
-            getLockObject().wait(msRemaining);
-            msRemaining = endTime - System.currentTimeMillis();
+
+            long endTime = System.currentTimeMillis() + msTimeout;
+            long msRemaining = msTimeout;
+
+            while (msRemaining > 0) {
+                checkForShutdown();
+                if (message == null) {
+                    return;
+                }
+                getLockObject().wait(msRemaining);
+                msRemaining = endTime - System.currentTimeMillis();
+            }
+            throw new TimedOutException();
+        } finally {
+            clearMessage();
         }
-        throw new TimedOutException();
     }
 
     @Override
@@ -105,26 +124,33 @@ public class StringHandoffImpl implements StringHandoff {
             throws InterruptedException, TimedOutException, ShutdownException, IllegalStateException {
 
         checkForShutdown();
+        setWaiting();
 
-        if (msTimeout <= 0) {
-            while (message == null) {
-                getLockObject().wait();
-                checkForShutdown();
-            }
-            return getMessage();
-        }
+        try {
 
-        long endTime = System.currentTimeMillis() + msTimeout;
-        long msRemaining = msTimeout;
-        while (msRemaining > 0) {
-            if (message != null) {
+            if (msTimeout <= 0) {
+                while (message == null) {
+                    getLockObject().wait();
+                    checkForShutdown();
+                }
                 return getMessage();
             }
-            getLockObject().wait(msRemaining);
-            msRemaining = endTime - System.currentTimeMillis();
-            checkForShutdown();
+
+            long endTime = System.currentTimeMillis() + msTimeout;
+            long msRemaining = msTimeout;
+            while (msRemaining > 0) {
+                if (message != null) {
+                    return getMessage();
+                }
+                getLockObject().wait(msRemaining);
+                msRemaining = endTime - System.currentTimeMillis();
+                checkForShutdown();
+            }
+            throw new TimedOutException();
         }
-        throw new TimedOutException();
+        finally {
+            clearWaiting();
+        }
     }
 
     @Override
@@ -136,6 +162,8 @@ public class StringHandoffImpl implements StringHandoff {
     @Override
     public synchronized void shutdown() {
         this.shutdown = true;
+        clearMessage();
+        clearWaiting();
         notifyAll();
     }
 
